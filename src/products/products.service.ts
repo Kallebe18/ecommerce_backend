@@ -1,6 +1,10 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma.service';
-import { CreateProductDto, EditProductDto } from './dto';
+import { CreateProductDto, UpdateProductDTO } from './dto';
 
 @Injectable()
 export class ProductsService {
@@ -19,8 +23,26 @@ export class ProductsService {
     });
   }
 
-  async editProduct(product: EditProductDto, id: string) {
-    return this.prisma.product.update({
+  async findById(id: string) {
+    return this.prisma.product.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
+  async editProduct(product: UpdateProductDTO, id: string) {
+    const productExists = await this.prisma.product.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!productExists) {
+      throw new ForbiddenException('O produto não existe');
+    }
+
+    return await this.prisma.product.update({
       where: { id },
       data: product,
     });
@@ -33,7 +55,13 @@ export class ProductsService {
   }
 
   async listProducts() {
-    return this.prisma.product.findMany();
+    return this.prisma.product.findMany({
+      where: {
+        stock: {
+          gt: 0,
+        },
+      },
+    });
   }
 
   async uploadImage(id: string, imagePath: string) {

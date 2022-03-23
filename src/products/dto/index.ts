@@ -1,45 +1,66 @@
-import { IsNotEmpty, IsOptional } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  MaxLength,
+  IsUUID,
+  Min,
+} from 'class-validator';
 
 export class CreateProductDto {
   @IsNotEmpty()
+  @MaxLength(80)
   name: string;
 
   @IsNotEmpty()
+  @MaxLength(300)
   description: string;
 
   @IsNotEmpty()
+  @Min(0)
   price: number;
 
   @IsNotEmpty()
+  @Min(0)
   stock: number;
+
+  @IsNotEmpty()
+  active: boolean;
 }
 
-export class EditProductDto {
+export class UpdateProductDTO {
   @IsOptional()
-  name: string;
+  @IsNotEmpty()
+  @MaxLength(80)
+  name?: string;
 
   @IsOptional()
-  description: string;
+  @IsNotEmpty()
+  @MaxLength(300)
+  description?: string;
 
   @IsOptional()
-  price: number;
+  @IsNotEmpty()
+  @Min(0)
+  price?: number;
 
   @IsOptional()
-  stock: number;
+  @IsNotEmpty()
+  @Min(0)
+  stock?: number;
 
   @IsOptional()
-  imageUrl: string;
-
-  @IsOptional()
-  active: boolean;
+  @IsNotEmpty()
+  active?: boolean;
 }
 
 export class EditProductParamDto {
   @IsNotEmpty()
+  @IsUUID()
   id: string;
 }
 
 export class UploadProductImageDto {
   @IsNotEmpty()
+  @IsUUID()
   id: string;
 }

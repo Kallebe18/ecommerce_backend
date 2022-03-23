@@ -13,6 +13,14 @@ export class UsersService {
     });
   }
 
+  async findById(id: string) {
+    return this.prisma.user.findUnique({
+      where: {
+        id,
+      },
+    });
+  }
+
   async findByUsername(username: string) {
     return this.prisma.user.findUnique({
       where: { username },
@@ -25,11 +33,11 @@ export class UsersService {
     });
   }
 
-  async changePassword(email: string, newPassword) {
+  async changePassword(userId: string, encryptedPassword: string) {
     return this.prisma.user.update({
-      where: { email },
+      where: { id: userId },
       data: {
-        password: newPassword,
+        password: encryptedPassword,
       },
     });
   }

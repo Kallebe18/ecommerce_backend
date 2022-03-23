@@ -1,14 +1,8 @@
-import {
-  Controller,
-  Post,
-  UseGuards,
-  Request,
-  Body,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Controller, Post, UseGuards, Request, Body } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
+import { AdminLoginGuard } from './admin-login.guard';
 import { AuthService } from './auth.service';
-import { CreateUserDto } from './dto';
+import { CreateUserDTO, PasswordChangeDTO, PasswordRecoveryDTO } from './dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @Controller('auth')
@@ -18,20 +12,30 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @Post('login')
   async login(@Request() req) {
-    const access_token = await this.authService.generateJwtToken(req.user);
+    const { id, email, role } = req.user;
+    const access_token = await this.authService.generateJwtToken({
+      sub: id,
+      email,
+      role,
+    });
+
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
     return {
       ...req.user,
       access_token,
     };
   }
 
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(AdminLoginGuard)
   @Post('admin/login')
   async adminLogin(@Request() req) {
-    if (req.user.role !== 'ADMIN') {
-      throw new UnauthorizedException();
-    }
-    const access_token = await this.authService.generateJwtToken(req.user);
+    const { id, email, role } = req.user;
+    const access_token = await this.authService.generateJwtToken({
+      sub: id,
+      email,
+      role,
+    });
     return {
       ...req.user,
       access_token,
@@ -39,30 +43,38 @@ export class AuthController {
   }
 
   @Post('register')
-  async register(@Body() user: CreateUserDto) {
-    return await this.authService.register(user);
+  async register(@Body() user: CreateUserDTO) {
+    await this.authService.register(user);
   }
 
   @UseGuards(JwtAuthGuard)
   @Post('refresh')
   async refresh(@Request() req) {
-    const access_token = await this.authService.generateJwtToken(req.user);
+    const access_token = await this.authService.generateJwtToken({
+      sub: req.user.userId,
+      email: req.user.email,
+      role: req.user.role,
+    });
     return {
       access_token,
     };
   }
 
-  // @Post('password/recovery')
-  // async passwordRecovery(@Body() { email }: PasswordRecoveryDto) {
-  //   await this.authService.passwordRecovery(email);
-  // }
+  @Post('recover/password')
+  async passwordRecovery(@Body() { email }: PasswordRecoveryDTO) {
+    await this.authService.passwordRecovery(email);
+    return;
+  }
 
-  // @UseGuards(JwtAuthGuard)
-  // @Post('password/change')
-  // async passwordRecover(
-  //   @Request() req,
-  //   @Body() { password }: PasswordChangeDto,
-  // ) {
-  //   await this.authService.passwordChange(req.user.email, password);
-  // }
+  @UseGuards(JwtAuthGuard)
+  @Post('change/password')
+  async changePassword(
+    @Request() req,
+    @Body() { password }: PasswordChangeDTO,
+  ) {
+    console.log(req.user);
+    const userId = req.user.userId;
+    await this.authService.changePassword(userId, password);
+    return;
+  }
 }
